@@ -1,0 +1,15 @@
+Server side game
+  Server will be constantly ticking and running game
+  when players start game, their characters are simply saved to a file
+  file name corresponds to player. server keeps track of whose playing whom
+  if all characters die, send back you lose/win message
+  sort players in json file by distance from spawn
+  spawn is last value in array list
+  Example file
+  (UniquePlayerId).json
+  {
+    Entity: [
+      {class: "Dale", damage: 100, hp: 300, x: (distance away from base in pixels)}
+      {class: "Base", damage: 0, hp: 1000, x: 0}
+    ]
+  }

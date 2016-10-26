@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Teacher Warfare</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  </head>
+  <body>
+    <img id="hell" src="hell.jpg" hidden/>
+    <img id="s0" src="school0.jpg" hidden/>
+    <img id="s1" src="school400.jpg" hidden/>
+    <img id="s2" src="school700.jpg" hidden/>
+    <img id="s3" src="school1000.jpg" hidden/>
+    <img id="moustache" src="Moustache.jpg" hidden/>
+    <img id="dale" src="Dale.jpg" hidden/>
+    <img id="bynosaur" src="Bynosaur.jpeg" hidden/>
+    <img id="wevodoge" src="wevodoge.jpg" hidden/>
+    <div class="row"><img class="col-sm-2" src="burn_school.gif"/><img class="col-sm-8" id="logo" src="logo.gif" /><img class="col-sm-2" src="burn_school.gif"/></div>
+    <script>
+    'use strict';
+      var c;
+      var ctx;
+      var ID;
+      var loop;
+      var HOST;
+      var KEY;
+      var start = true;
+      var end = false;
+      var NAME;
+      var WINNER;
+
+      window.onload = function(){
+
+      }
+
+      function send(key){
+        if(KEY!=null && ID!=null && HOST!=null && NAME!=null) {
+          var command = null
+          switch(key.toLowerCase()){
+            case 'q':
+                  command = 0;
+                  break;
+            case 'w':
+                  command = 1;
+                  break;
+            case 'e':
+                  command = 2;
+                  break;
+            case 'r':
+                  command = 3;
+                  break;
+            case 't':
+                  command = 4;
+          }
+          if (command!=null){
+            var req = {"command": command, "key": KEY, "name": NAME, "host": HOST, "id": ID};
+            $.post('/controller', req, function(data, status){
+              console.log(status)
+            });
+          }
+        }
+        else {console.log(key)}
+      }
+
+      function clearTree(node){
+        while(node.hasChildNodes()){
+          if(node.firstChild.hasChildNodes()){
+            clearTree(node.firstChild);
+          }
+          node.removeChild(node.firstChild);
+        }
+      }
+
+      function clickCreate() {
+        var elem=document.getElementById("create");
+        elem.hidden^=true;
+      }
+      function clickJoin() {
+        var elem=document.getElementById("join");
+        elem.hidden^=true;
+      }
+      function createGame() {
+        var name = document.getElementById("cname").value;
+        if (name=="Name") name = "Too lazy to enter a name";
+        var req = {"name": name};
+        NAME = name;
+        $.post("/create", req, function(data, status){
+          if (status=="success"){
+            ID = data.id;
+            HOST = 1;
+            KEY = data.key;
+            joinLobby();
+          }
+          else{console.log(status);}
+        });
+      }
+      function joinGame() {
+        var name = document.getElementById("jname").value;
+        if (name=="Name") name = "Too lazy to enter a name";
+        NAME = name;
+        var myId = document.getElementById("jid").value;
+        var req = {"name": name, "id": myId};
+        console.log(req);
+        $.post("/join",req,function(data, status){
+          if(status=="success"){
+            ID = data.id;
+            HOST = 0;
+            KEY = data.key;
+            joinLobby();
+          }
+          else{console.log(status);}
+        });
+      }
+      function joinLobby(){
+        c = document.createElement("canvas");
+        c.width = 800;
+        c.height = 300
+        c.setAttribute("tabindex", 0);
+        c.addEventListener("keydown", function(){send(event.key)})
+        ctx = c.getContext("2d");
+        var div = document.getElementById("canvas");
+        clearTree(document.getElementById("menu"));
+        div.appendChild(c);
+        document.getElementById("control").hidden = false;
+        ctx.drawImage(document.getElementById("hell"),0,0);
+        getStatus();
+        loop = setInterval(getStatus,1000);
+      }
+      function getStatus() {
+        var req = {"id": ID}
+        console.log(req);
+        $.post("/status", req, function(data, status){
+          if (status =="success"){
+            console.log(data)
+            console.log(data.name)
+            if (data.name == null){
+              console.log("Game Starting");
+              clearInterval(loop);
+              loop = setInterval(game,1000);
+            }
+            else{
+              console.log(data);
+              ctx.font = "60px Comic Sans MS";
+              ctx.fillStyle = "white";
+              ctx.textAlign = "center";
+              ctx.fillText("(Share with player 2)",c.width/2,100);
+              ctx.fillText("Key: "+data.id,c.width/2,175);
+            }
+          }
+          else {console.log(status)};
+        });
+      }
+      function game(){
+        var req = {"host": HOST, "id":ID};
+        $.post("/game", req, function(data){
+          if(data.you != null) {
+            console.log(data.you);
+            console.log(data.them);
+            ctx.drawImage(document.getElementById("hell"),0,0);
+            if(data.you.base.gold<50 && start){
+              ctx.font = "60px Comic Sans MS";
+              ctx.fillStyle = "white";
+              ctx.textAlign = "center";
+              var time = (100 - data.you.base.gold) / 10;
+              ctx.fillText("Game starting in " + time, c.width/2, c.height/2);
+            }
+            else if (data.you.base.gold<100 && start){
+              ctx.font = "20px Comic Sans MS";
+              var you = data.you;
+              var them = data.them;
+              ctx.textAlign = "right";
+              ctx.fillText("HP: "+ them.base.hp + "  Gold: "+them.base.gold+"  Level: " + them.base.level,795, 45);
+              ctx.fillText(them.name,795, 20);
+              ctx.textAlign = "left";
+              ctx.fillText("HP: "+ you.base.hp + "  Gold: "+you.base.gold+"  Level: " + you.base.level, 5, 45);
+              ctx.fillText(you.name,5, 20);
+              ctx.drawImage(document.getElementById("s"+Math.floor(you.base.hp/251)),150-128,300-129);
+              ctx.drawImage(document.getElementById("s"+Math.floor(them.base.hp/251)),650,300-129);
+              ctx.font = "60px Comic Sans MS";
+              ctx.fillStyle = "white";
+              ctx.textAlign = "center";
+              var time = (100 - data.you.base.gold) / 10;
+              ctx.fillText("Game starting in " + time, c.width/2, c.height/2);
+              if (time <2)  start = false;
+            }
+            else {
+              draw(data);
+            }
+          }
+          else{
+            WINNER = data.winner;
+            clearInterval(loop);
+            ctx.drawImage(document.getElementById("hell"),0,0);
+            ctx.font = "55px Comic Sans MS";
+            ctx.fillStyle = "white";
+            ctx.textAlign = "center";
+            ctx.fillText(WINNER + " Wins!",c.width/2, c.height/2);
+          }
+        });
+      }
+
+      function draw(data){
+        ctx.font = "20px Comic Sans MS";
+        var you = data.you;
+        var them = data.them;
+        ctx.textAlign = "right";
+        ctx.fillText("HP: "+ them.base.hp + "  Gold: "+them.base.gold+"  Level: " + them.base.level,795, 45);
+        ctx.fillText(them.name,795, 20);
+        ctx.textAlign = "left";
+        ctx.fillText("HP: "+ you.base.hp + "  Gold: "+you.base.gold+"  Level: " + you.base.level, 5, 45);
+        ctx.fillText(you.name,5, 20);
+        ctx.drawImage(document.getElementById("s"+Math.floor(you.base.hp/251)),150-128,300-129);
+        ctx.drawImage(document.getElementById("s"+Math.floor(them.base.hp/251)),650,300-129);
+        ctx.font = "10px Comic Sans MS";
+        recurseDraw(data)
+        }
+        function recurseDraw(data){
+          ctx.font = "10px Comic Sans MS";
+          ctx.textAlign = "left";
+          var you = data.you;
+          var them = data.them;
+          var loc;
+          var count;
+          var i;
+          var j;
+          for (i=0;i<you.entity.length;i+=1){
+            console.log("i"+i)
+            loc = (you.entity[i].x*2.5) - 64 + 150;
+            count=0;
+            j=1+i;
+            for(;j<you.entity.length;j+=1){
+              console.log("j"+j +"i"+i + "length"+you.entity.length)
+              if (j<you.entity.length){
+              var x = (you.entity[j].x*2.5) - 64 + 150;
+              if (loc == x)
+                count+=1;
+              else
+                break;
+              }
+            }
+            ctx.drawImage(document.getElementById(you.entity[i].class),loc, 220 - count*12)
+            ctx.fillText(you.entity[i].hp,loc,230 - count*12);
+          }
+          ctx.textAlign = "right";
+          for (i=0;i<them.entity.length;i+=1){
+            loc = 650 - (them.entity[i].x*2.5);
+            count=0;
+            j=1+i;
+            for(;j<them.entity.length;j+=1){
+              if (j<them.entity.length){
+                var x = 650 - (them.entity[j].x*2.5);
+                if (loc == x)
+                  count+=1;
+                else
+                  break;
+              }
+            }
+            ctx.drawImage(document.getElementById(them.entity[i].class),loc, 220 - count*12)
+            ctx.fillText(them.entity[i].hp,loc+64,230 - count*12);
+          }
+        }
+        function help(){
+          var n = document.getElementById("help");
+          n.hidden = n.hidden^1;
+        }
+    </script>
+    <style>
+      .center {
+        width: 95%;
+      }
+      .top {
+        margin-top: 10px;
+      }
+      .gap {
+        margin-top: 30px;
+      }
+      .left {
+        margin-left: 5%;
+      }
+      .right {
+        margin-right: 5%;
+      }
+    </style>
+    <div id="menu" class="row" style="margin-top: 3px">
+      <div class="col-sm-6">
+        <button type="button" onclick=clickCreate() class="center left btn btn-default">Create Game</button>
+        <div id="create" hidden>
+          <input type="text" class="center left gap" id="cname" value="Name">
+          <button type="button" onclick=createGame() class="center left btn btn-default top">Create</button>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <button type="button" onclick=clickJoin() class="center right btn btn-default">join Game</button>
+        <div id="join" hidden>
+          <input type="text" class="center right gap" id="jname" value="Name">
+          <input type="text" class="center right top" id="jid" value="Key">
+          <button type="button" onclick=joinGame() class="center right btn btn-default top">Join</button>
+        </div>
+      </div>
+    </div>
+    <div id="listen"></div>
+    <div class="top" style="text-align: center" id="canvas"></div>
+    <span class="row" id="control" hidden>
+      <button type="button" onclick=send('q') class="btn btn-default col-sm-2">Q</button>
+      <button type="button" onclick=send('w') class="btn btn-default col-sm-2">W</button>
+      <button type="button" onclick=send('e') class="btn btn-default col-sm-2">E</button>
+      <button type="button" onclick=send('r') class="btn btn-default col-sm-2">R</button>
+      <button type="button" onclick=send('t') class="btn btn-default col-sm-2">T</button>
+      <button type="button" onclick=help() class="btn btn-default col-sm-2">CONTROLS</button>
+    </span>
+    <pre id="help" hidden>
+      Base:: button: Q, increases the amount of gold you get per frame by 5
+
+      Bynosaur:: button: W, damage: 15, hp: 75, speed: 10, range: 0, hits:1, cost: 30
+
+      Wevodoge:: button: E, damage: 50, hp: 15, speed': 10, range: 10, hits:1, cost: 75
+
+      Moustache:: button: R, damage: 15, hp: 300, speed: 10, range: 0, hits:1, cost: 150
+
+      Dale:: button: T, damage: 75, hp: 200, speed: 10, range: 0, hits:3, cost: 300
+    </pre>
+  </body>
+</html>
