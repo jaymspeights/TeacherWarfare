@@ -1,8 +1,9 @@
-//'use strict';
+'use strict';
 var express = require("express");
 var bodyParser = require("body-parser");
 var fs = require("fs");
 var app = express();
+var player = [];
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + "/files/Teacher_Warfare.html")
@@ -19,42 +20,47 @@ app.use(bodyParser.urlencoded({
 
 app.post('/controller', function (req, res) {
   var command = req.body.command;
-  var filename = "files/" + req.body.key + "_" + req.body.name + "_" + req.body.host + req.body.id;
-  var p = fs.readFileSync(filename + ".json","utf8");
-  p = p.replace("}}","}");
-
-  if (p!=null){
-    var player = JSON.parse(p);
-  }
-  if (player.start != null){
+  var name = req.body.name + "_" + req.body.host + req.body.id;
+  console.log(name)
+  console.log(player)
+  var plyr = getPlayerByName(name);
+  console.log("command sent")
+  console.log(req.body)
+  console.log(plyr)
+  if (plyr.start != null && plyr.key == req.body.key){
     switch(command){
       case '0':
-          if (player.base.gold>(player.base.level*100)){
-            fs.appendFileSync(filename + ".txt","\nLEVEL");
+          if (plyr.base.gold>(plyr.base.level*100)){
+            plyr.base.gold -= plyr.base.level*100;
+            plyr.base.level += 1;
             res.sendStatus(200);
           }
           break;
       case '1':
-          if (player.base.gold>30){
-            fs.appendFileSync(filename + ".txt", "\n"+JSON.stringify({'class': 'bynosaur', 'damage': 15, 'hp': 75, 'x':0, 'speed': 10, 'range': 0, 'hits':1, 'cost': 30}));
+          if (plyr.base.gold>30){
+            plyr.base.gold-=30;
+            plyr.entity[plyr.entity.length] = {'class': 'bynosaur', 'damage': 15, 'hp': 75, 'x':0, 'speed': 10, 'range': 0, 'hits':1, 'cost': 30};
             res.sendStatus(200);
           }
           break;
       case '2':
-          if (player.base.gold>75){
-            fs.appendFileSync(filename+ ".txt", "\n"+JSON.stringify({'class': 'wevodoge', 'damage': 50, 'hp': 15, 'x':0, 'speed': 10, 'range': 10, 'hits':1, 'cost': 75}));
+          if (plyr.base.gold>75){
+            plyr.base.gold-=75;
+            plyr.entity[plyr.entity.length] = {'class': 'wevodoge', 'damage': 50, 'hp': 15, 'x':0, 'speed': 10, 'range': 10, 'hits':1, 'cost': 75};
             res.sendStatus(200);
           }
           break;
       case '3':
-          if (player.base.gold>150){
-            fs.appendFileSync(filename+ ".txt", "\n"+JSON.stringify({'class': 'moustache', 'damage': 15, 'hp': 300, 'x':0, 'speed': 10, 'range': 0, 'hits':1, 'cost': 150}));
+          if (plyr.base.gold>150){
+            plyr.base.gold-=150;
+            plyr.entity[plyr.entity.length] = {'class': 'moustache', 'damage': 15, 'hp': 300, 'x':0, 'speed': 10, 'range': 0, 'hits':1, 'cost': 150};
             res.sendStatus(200);
           }
           break;
       case '4':
-          if (player.base.gold>300){
-            fs.appendFileSync(filename+ ".txt", "\n"+JSON.stringify({'class': 'dale', 'damage': 75, 'hp': 200, 'x':0, 'speed': 10, 'range': 0, 'hits':3, 'cost': 300}));
+          if (plyr.base.gold>300){
+            plyr.base.gold-=300;
+            plyr.entity[plyr.entity.length] = {'class': 'dale', 'damage': 75, 'hp': 200, 'x':0, 'speed': 10, 'range': 0, 'hits':3, 'cost': 300};
             res.sendStatus(200);
           }
           break;
@@ -84,27 +90,24 @@ app.post('/create', function (req, res) {
   }
   var today = new Date();
   var key = Math.floor(Math.random()*99999);
-  var player = {"name": key +"_" + req.body.name, "id": game_id, "date": today.getTime()};
+  var plyr = {"name": req.body.name, "key": key, "id": game_id, "date": today.getTime()};
   var data = {"id": game_id, "key": key};
-  fs.appendFile("files/lobby.txt","\n"+JSON.stringify(player));
+  fs.appendFile("files/lobby.txt","\n"+JSON.stringify(plyr));
   res.status(200).send(data);
 });
 
 app.post('/join', function (req, res) {
   console.log("post join request");
-  var player = removePlayerById(req.body.id);
-  if (player!=null){
-    var p = JSON.parse(player);
+  var plyr = removeplyrById(req.body.id);
+  if (plyr!=null){
+    var p = JSON.parse(plyr);
     var key = Math.floor(Math.random()*99999);
-    var battle = {"player0":p.name + "_1" + req.body.id, "player1": key+"_"+req.body.name + "_0" + req.body.id, "id": req.body.id};
-    var name0 = "files/"+battle.player0;
-    var name1 = "files/"+battle.player1;
-    var start0 = JSON.stringify({"entity": [], "base": {"hp": 1000, "gold": 0, "level": 1},"name":p.name.split("_")[1]});
-    var start1 = JSON.stringify({"entity": [], "base": {"hp": 1000, "gold": 0, "level": 1},"name":req.body.name});
-    fs.writeFile(name0 + ".json", start0);
-    fs.writeFile(name1 + ".json", start1);
-    fs.writeFile(name0 + ".txt", "null");
-    fs.writeFile(name1 + ".txt", "null");
+    var battle = {"plyr0":p.name + "_1" + req.body.id, "plyr1": req.body.name + "_0" + req.body.id, "id": req.body.id};
+    var p0 = {"entity": [], "base": {"hp": 1000, "gold": 0, "level": 1},"name":battle.plyr0, "key": p.key};
+    var p1 = {"entity": [], "base": {"hp": 1000, "gold": 0, "level": 1},"name":battle.plyr1, "key": key};
+    player[player.length] = p0;
+    player[player.length] = p1;
+    console.log(player)
     fs.appendFile("files/battle.txt","\n"+JSON.stringify(battle));
     p.name = null;
     fs.appendFile("files/lobby.txt", "\n"+JSON.stringify(p));
@@ -115,18 +118,22 @@ app.post('/join', function (req, res) {
 });
 
 app.post('/game', function(req, res) {
+  console.log("game")
   var battle = getBattleById(req.body.id)
   if (battle!=null){
     if (battle.winner==null) {
-      var file_player0 = "files/"+battle.player0+".json";
-      var file_player1 = "files/"+battle.player1+".json";
-      var p0 = fs.readFileSync(file_player0,"utf8");
-      var p1 = fs.readFileSync(file_player1,"utf8");
-      var player0 = JSON.parse(p0);
-      var player1 = JSON.parse(p1);
-      var data = {"you": player1, "them": player0}
+      let p0 = copyPlayerByName(battle.plyr0);
+      p0.key = null;
+      p0.name = p0.name.split("_")[0];
+      let p1 = copyPlayerByName(battle.plyr1);
+      console.log("\n\n")
+      console.log(player)
+      p1.key = null;
+      p1.name = p1.name.split("_")[0];
+      console.log(player)
+      var data = {"you": p1, "them": p0}
       if (req.body.host == '1')
-        data = {"you": player0, "them": player1};
+        data = {"you": p0, "them": p1};
       res.status(200).send(data);
     }
     else {
@@ -139,37 +146,56 @@ app.post('/game', function(req, res) {
 
 app.post('/status', function(req, res){
   if(req.body!=null){
-    var player = getPlayerById(req.body.id);
-    res.send(JSON.parse(player));
+    var plyr = getplyrById(req.body.id);
+    res.send(JSON.parse(plyr));
   }
   else{res.sendStatus(500);}
 });
 
-
-function getPlayerById(ID){
-  var player = fs.readFileSync("files/lobby.txt","utf8").split("\n");
+function getPlayerByName(name){
+  console.log(player)
   for (var i in player){
-    if(player[i]!="null"){
-      if (JSON.parse(player[i]).id == ID){
-        return player[i];
+    if (player[i].name == name)
+    return player[i];
+  }
+}
+
+function copyPlayerByName(name){
+  for (var i in player){
+    if (player[i].name == name){
+    var p = {}
+    for (var k in player[i])
+      p[k] = player[i][k];
+    console.log(p)
+    return p;
+  }
+  }
+}
+
+function getplyrById(ID){
+  var plyr = fs.readFileSync("files/lobby.txt","utf8").split("\n");
+  for (var i in plyr){
+    if(plyr[i]!="null"){
+      if (JSON.parse(plyr[i]).id == ID){
+        return plyr[i];
       }
     }
   }
 }
 
-function removePlayerById(ID){
-  var player = fs.readFileSync("files/lobby.txt","utf8").split("\n");
+function removeplyrById(ID){
+  var plyr = fs.readFileSync("files/lobby.txt","utf8").split("\n");
   var data = "null";
-  for (var i in player){
-    if(player[i]!="null"){
-      if (JSON.parse(player[i]).id == ID){
-        var p = player[i];
-        player.splice(i,1);
-        if(player.length>1){
-          data = player.join("\n");
+  for (var i in plyr){
+    if(plyr[i]!="null"){
+      if (JSON.parse(plyr[i]).id == ID){
+        var p = plyr[i];
+        plyr.splice(i,1);
+        if(plyr.length>1){
+          data = plyr.join("\n");
         }
         else {
-          data = player[0];
+          data = plyr[0];
         }
         fs.writeFile("files/lobby.txt",data);
         return p;
@@ -193,22 +219,23 @@ function clearLobby(){
   var now = today.getTime();
   var n = '{"name": '+null+', "id": 0, "date": '+now+'}';
   fs.appendFile("files/lobby.txt","\n"+ n);
-  var player = fs.readFileSync("files/lobby.txt","utf8").split("\n");
-  for (var i = (player.length - 2); i > 0; i -= 1){
-    if (JSON.parse(player[i]).date + 10000000 < now){
-      player.splice(i, 1);
+  var plyr = fs.readFileSync("files/lobby.txt","utf8").split("\n");
+  for (var i = (plyr.length - 2); i > 0; i -= 1){
+    if (JSON.parse(plyr[i]).date + 10000000 < now){
+      plyr.splice(i, 1);
     }
   }
-  fs.writeFileSync("files/lobby.txt",player.join("\n"));
+  fs.writeFileSync("files/lobby.txt",plyr.join("\n"));
 }
 
 function upkeep(){
+  console.log("upkeep")
   var battle = fs.readFileSync("files/battle.txt","utf8").split("\n");
   if (battle!="null"){
     for (var i in battle){
       if(battle[i]!="null"){
         var b = JSON.parse(battle[i]);
-        if (b.player0 != null){
+        if (b.plyr0 != null){
           tick(b);
         }
       }
@@ -216,145 +243,123 @@ function upkeep(){
   }
 }
 
-function update(filename){
-  var p = fs.readFileSync(filename +".json","utf8",function(){});
-  p = p.replace("}}","}");
-  var player = JSON.parse(p);
-  var newEntity =fs.readFileSync(filename+".txt","utf8").split("\n");
-  for (var i =0;i<4;i++){
-    if (newEntity[i]!=null&&newEntity[i]!="null" && newEntity[i]!="LEVEL"){
-      var e = JSON.parse(newEntity[i]);
-      if (player.base.gold >= e.cost){
-        player.base.gold -= e.cost;
-        player.entity[player.entity.length] = e;
-      }
-    }
-    else if (newEntity[i]!=null&&newEntity[i]=="LEVEL" && player.base.gold >= player.base.level*100){
-      player.base.gold -= player.base.level*100
-      player.base.level += 1;
-    }
-  }
-  fs.writeFile(filename+".txt","null");
-  return player;
-}
-
 function tick(battle){
-  var file_player0 = "files/"+battle.player0;
-  var file_player1 = "files/"+battle.player1;
-  var player0 = update(file_player0);
-  var player1 = update(file_player1);
-  if (player0.start == null && player0.base.gold>=100){
-    player0.start = true;
-    player1.start = true;
+  console.log("tick")
+  console.log(battle.plyr0)
+  console.log(battle.plyr1)
+  var plyr0 = getPlayerByName(battle.plyr0);
+  var plyr1 = getPlayerByName(battle.plyr1);
+  console.log(plyr0)
+  console.log(plyr1)
+  if (plyr0.start == null && plyr0.base.gold>=100){
+    plyr0.start = true;
+    plyr1.start = true;
   }
-  var player = [player0, player1];
-  player[0].base.gold += 5 + player[0].base.level*5;
-  player[1].base.gold += 5 + player[1].base.level*5;
+  var plyr = [plyr0, plyr1];
+  plyr[0].base.gold += 5 + plyr[0].base.level*5;
+  plyr[1].base.gold += 5 + plyr[1].base.level*5;
 
 
   //SORT AND ESTABLISH FRONT
   var front = [0,0];
-  if (player0.entity[0]!=null){
-    player0.entity.sort(function(a,b){return b.x - a.x});
-    front[0] = player0.entity[0].x;
+  if (plyr0.entity[0]!=null){
+    plyr0.entity.sort(function(a,b){return b.x - a.x});
+    front[0] = plyr0.entity[0].x;
   }
-  if (player1.entity[0]!=null){
-    player1.entity.sort(function(a,b){return b.x - a.x});
-    front[1] = player1.entity[0].x;
+  if (plyr1.entity[0]!=null){
+    plyr1.entity.sort(function(a,b){return b.x - a.x});
+    front[1] = plyr1.entity[0].x;
   }
 
   //DEAL DAMAGE AND MOVE
   var c = front[0]<front[1] ? 0:1;
-  for (var i in player[c].entity) {
+  for (var i in plyr[c].entity) {
     //at base
-    if (player[c].entity[i].x + player[c].entity[i].range >= 200){
-      player[c^1].base.hp -= player[c].entity[i].damage;
-      for(var j = 0; j < player[c].entity[i].hits-1; j += 1){
-        if (player[c^1].entity[j] != null && (200 - player[c^1].entity[j].x - player[c].entity[i].x - player[c].entity[i].range)<=0){
-          player[c^1].entity[j].hp -= player[c].entity[i].damage;
+    if (plyr[c].entity[i].x + plyr[c].entity[i].range >= 200){
+      plyr[c^1].base.hp -= plyr[c].entity[i].damage;
+      for(var j = 0; j < plyr[c].entity[i].hits-1; j += 1){
+        if (plyr[c^1].entity[j] != null && (200 - plyr[c^1].entity[j].x - plyr[c].entity[i].x - plyr[c].entity[i].range)<=0){
+          plyr[c^1].entity[j].hp -= plyr[c].entity[i].damage;
         }
         else break;
       }
     }
-    //at another player
-    else if (player[c].entity[i].x + player[c].entity[i].range + front[c^1] >= 200){
-      for(var j = 0; j < player[c].entity[i].hits; j += 1){
-        if (player[c^1].entity[j] != null && (200 - player[c^1].entity[j].x - player[c].entity[i].x - player[c].entity[i].range)<=0){
-          player[c^1].entity[j].hp -= player[c].entity[i].damage;
+    //at another plyr
+    else if (plyr[c].entity[i].x + plyr[c].entity[i].range + front[c^1] >= 200){
+      for(var j = 0; j < plyr[c].entity[i].hits; j += 1){
+        if (plyr[c^1].entity[j] != null && (200 - plyr[c^1].entity[j].x - plyr[c].entity[i].x - plyr[c].entity[i].range)<=0){
+          plyr[c^1].entity[j].hp -= plyr[c].entity[i].damage;
         }
         else break;
       }
     }
-    else if (player[c].entity[i].x + player[c].entity[i].range + front[c^1] < 200){
-      player[c].entity[i].x = ((player[c].entity[i].x + player[c].entity[i].speed) < (200 - front[c^1])) ?  (player[c].entity[i].x + player[c].entity[i].speed):(200 - front[c^1]);
+    else if (plyr[c].entity[i].x + plyr[c].entity[i].range + front[c^1] < 200){
+      plyr[c].entity[i].x = ((plyr[c].entity[i].x + plyr[c].entity[i].speed) < (200 - front[c^1])) ?  (plyr[c].entity[i].x + plyr[c].entity[i].speed):(200 - front[c^1]);
     }
   }
 
-  front[c]= player[c].entity[0]==null ? 0:player[c].entity[0].x;
+  front[c]= plyr[c].entity[0]==null ? 0:plyr[c].entity[0].x;
   c = c^1;
-  for (var i in player[c].entity) {
+  for (var i in plyr[c].entity) {
     //at base
-    if (player[c].entity[i].x + player[c].entity[i].range >= 200){
-      player[c^1].base.hp -= player[c].entity[i].damage;
-      for(var j = 0; j < player[c].entity[i].hits-1; j += 1){
-        if (player[c^1].entity[j] != null && (200 - player[c^1].entity[j].x - player[c].entity[i].x - player[c].entity[i].range)<=0){
-          player[c^1].entity[j].hp -= player[c].entity[i].damage;
+    if (plyr[c].entity[i].x + plyr[c].entity[i].range >= 200){
+      plyr[c^1].base.hp -= plyr[c].entity[i].damage;
+      for(var j = 0; j < plyr[c].entity[i].hits-1; j += 1){
+        if (plyr[c^1].entity[j] != null && (200 - plyr[c^1].entity[j].x - plyr[c].entity[i].x - plyr[c].entity[i].range)<=0){
+          plyr[c^1].entity[j].hp -= plyr[c].entity[i].damage;
         }
         else break;
       }
     }
-    //at another player
-    else if (player[c].entity[i].x + player[c].entity[i].range + front[c^1] >= 200){
-      for(var j = 0; j < player[c].entity[i].hits; j += 1){
-        if (player[c^1].entity[j] != null && (200 - player[c^1].entity[j].x - player[c].entity[i].x - player[c].entity[i].range)<=0){
-          player[c^1].entity[j].hp -= player[c].entity[i].damage;
+    //at another plyr
+    else if (plyr[c].entity[i].x + plyr[c].entity[i].range + front[c^1] >= 200){
+      for(var j = 0; j < plyr[c].entity[i].hits; j += 1){
+        if (plyr[c^1].entity[j] != null && (200 - plyr[c^1].entity[j].x - plyr[c].entity[i].x - plyr[c].entity[i].range)<=0){
+          plyr[c^1].entity[j].hp -= plyr[c].entity[i].damage;
         }
         else break;
       }
     }
-    else if (player[c].entity[i].x + player[c].entity[i].range + front[c^1] < 200){
-      player[c].entity[i].x = ((player[c].entity[i].x + player[c].entity[i].speed) < (200 - front[c^1])) ?  (player[c].entity[i].x + player[c].entity[i].speed):(200 - front[c^1]);
+    else if (plyr[c].entity[i].x + plyr[c].entity[i].range + front[c^1] < 200){
+      plyr[c].entity[i].x = ((plyr[c].entity[i].x + plyr[c].entity[i].speed) < (200 - front[c^1])) ?  (plyr[c].entity[i].x + plyr[c].entity[i].speed):(200 - front[c^1]);
     }
   }
 
   //REMOVE DEAD ENTITIES
-  for (var i = player0.entity.length-1;i>=0;i-=1){
-    if (player0.entity[i].hp <=0){
-      player0.entity.splice(i);
+  for (var i = plyr0.entity.length-1;i>=0;i-=1){
+    if (plyr0.entity[i].hp <=0){
+      plyr0.entity.splice(i);
     }
   }
-  for (var i = player1.entity.length-1;i>=0;i-=1){
-    if (player1.entity[i].hp <=0){
-      player1.entity.splice(i);
+  for (var i = plyr1.entity.length-1;i>=0;i-=1){
+    if (plyr1.entity[i].hp <=0){
+      plyr1.entity.splice(i);
     }
   }
 
 
-  if (player1.base.hp <= 0){
-    var name = (battle.player0).split("_")[1];
-    fs.unlink((file_player0 + ".json"));
-    fs.unlink((file_player1 + ".json"));
-    fs.unlink((file_player0 + ".txt"));
-    fs.unlink((file_player1 + ".txt"));
+  if (plyr1.base.hp <= 0){
+    var name = (battle.plyr0).split("_")[0];
     endBattle(battle.id,name);
+    removeByName(plyr0.name);
+    removeByName(plyr1.name);
     return;
   }
-  else if (player0.base.hp <= 0){
-    var name = (battle.player1).split("_")[1];
-    fs.unlink((file_player0 + ".json"));
-    fs.unlink((file_player1 + ".json"));
-    fs.unlink((file_player0 + ".txt"));
-    fs.unlink((file_player1 + ".txt"));
+  else if (plyr0.base.hp <= 0){
+    var name = (battle.plyr1).split("_")[0];
     endBattle(battle.id,name);
+    removeByName(plyr0.name);
+    removeByName(plyr1.name);
     return;
   }
-  var p0 = JSON.stringify(player0);
-  var p1 = JSON.stringify(player1);
-  fs.writeFile((file_player0 + ".json"),p0);
-  fs.writeFile((file_player1 + ".json"),p1);
 }
 
-
+function removeByName(name){
+  for (var i in player){
+    if (player[i].name == name)
+      player.splice(i,1);
+  }
+}
 
 function endBattle(ID, winner) {
   console.log("ending battle")
@@ -363,8 +368,8 @@ function endBattle(ID, winner) {
     var b = JSON.parse(battle[i]);
     if (b!= null){
       if (b.id == ID){
-        b.player0 = null;
-        b.player1 = null;
+        b.plyr0 = null;
+        b.plyr1 = null;
         b.winner = winner;
         battle[i] = JSON.stringify(b);
         fs.writeFile("files/battle.txt",battle.join("\n"));
@@ -385,11 +390,11 @@ function removeBattleHistory(ID){
       break;
     }
   }
-  var player = fs.readFileSync("files/lobby.txt","utf8").split("\n");
-  for(var i in player){
-    if (player[i]!="null"&&JSON.parse(player[i]).id == ID){
-      player.splice(i,1);
-      fs.writeFile("files/lobby.txt",player.join("\n"));
+  var plyr = fs.readFileSync("files/lobby.txt","utf8").split("\n");
+  for(var i in plyr){
+    if (plyr[i]!="null"&&JSON.parse(plyr[i]).id == ID){
+      plyr.splice(i,1);
+      fs.writeFile("files/lobby.txt",plyr.join("\n"));
       break;
     }
   }
