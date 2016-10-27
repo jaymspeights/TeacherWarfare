@@ -4,7 +4,8 @@ var bodyParser = require("body-parser");
 var app = express();
 var player = [];
 var battle = [];
-var lobby = []
+var lobby = [];
+var random_lobby = [];
 
 app.get('/', function (req, res) {
   console.log("got a request!");
@@ -107,10 +108,49 @@ app.post('/join', function (req, res) {
   else {res.sendStatus(400);}
 });
 
+app.post('/join_random', function (req, res) {
+  console.log("post join random request");
+  if (req.body!=null){
+    var p = getFirstLobby();
+    if (p==null&&req.body.name!=null)  {
+      var game_id = Math.floor(Math.random()*99000 + 1);
+      var set_id = false;
+      while(!set_id){
+        set_id = true;
+        for (var id of random_lobby){
+          if (game_id == id.id){
+          game_id += 1;
+          set_id = false;
+          break;
+          }
+        }
+      }
+      var today = new Date();
+      var key = Math.floor(Math.random()*99999);
+      var plyr = {"name": req.body.name, "key": key, "id": game_id, "date": today.getTime(), "random": true};
+      var data = {"id": game_id, "key": key, "host": 1};
+      random_lobby[random_lobby.length] = plyr;
+      res.status(200).send(data);
+    }
+    else if (req.body.name!=null){
+      var key = Math.floor(Math.random()*99999);
+      var today = new Date();
+      var b = {"player0":p.name + "_1" + p.id, "player1": req.body.name + "_0" + p.id, "id": p.id, "date":today.getTime()};
+      var p0 = {"entity": [], "base": {"hp": 1000, "gold": 0, "level": 1},"name":b.player0, "key": p.key};
+      var p1 = {"entity": [], "base": {"hp": 1000, "gold": 0, "level": 1},"name":b.player1, "key": key};
+      player[player.length] = p0;
+      player[player.length] = p1;
+      battle[battle.length] = b;
+      p.name = null;
+      var data = {"id": p.id, "key": key, "name":req.body.nam, "host": 0};
+      res.status(200).send(data);
+    }
+  }
+  else {res.sendStatus(400);}
+});
+
 app.post('/game', function(req, res) {
-  console.log(battle)
   var b = getBattleById(req.body.id);
-  console.log(b)
   if (b!=null){
     if (b.winner==null) {
       let p0 = copyPlayerByName(b.player0);
@@ -133,8 +173,12 @@ app.post('/game', function(req, res) {
 });
 
 app.post('/status', function(req, res){
-  if(req.body!=null){
+  if(req.body!=null&&!req.body.random){
     var plyr = getLobbyById(req.body.id);
+    res.send(plyr);
+  }
+  else if (req.body!=null&&req.body.random){
+    var plyr = getRandomLobbyById(req.body.id)
     res.send(plyr);
   }
   else{res.sendStatus(400);}
@@ -165,7 +209,20 @@ function getLobbyById(ID){
     }
   }
 }
-
+function getFirstLobby(){
+  for (let l of random_lobby){
+    if (l.name!=null){
+      return l;
+    }
+  }
+}
+function getRandomLobbyById(ID){
+  for (var l of random_lobby){
+    if(l.id == ID){
+      return l;
+    }
+  }
+}
 function removeplyrById(ID){
   for (var lob of lobby){
     if (lob.id == ID) {
@@ -190,6 +247,11 @@ function clearLobby(){
   for (var i = (lobby.length); i > 0; i -= 1){
     if (lobby[i].date + 10000000 < now || lobby[i].flag == true){
       lobby.splice(i, 1);
+    }
+  }
+  for (var i = (random_lobby.length); i > 0; i -= 1){
+    if (random_lobby[i].date + 10000000 < now || random_lobby[i].flag == true){
+      random_lobby.splice(i, 1);
     }
   }
 }
@@ -226,7 +288,7 @@ function tick(b){
 
   //DEAL DAMAGE AND MOVE
   var c = front[0]<front[1] ? 0:1;
-  for (let i in plyr[c].entity) {
+  for (let i = 0; i < plyr[c].entity.length; i += 1) {
     //at base
     if (plyr[c].entity[i].x + plyr[c].entity[i].range >= 200){
       plyr[c^1].base.hp -= plyr[c].entity[i].damage;
@@ -253,7 +315,7 @@ function tick(b){
 
   front[c]= plyr[c].entity[0]==null ? 0:plyr[c].entity[0].x;
   c = c^1;
-  for (let i in plyr[c].entity) {
+  for (let i = 0; i < plyr[c].entity.length; i += 1) {
     //at base
     if (plyr[c].entity[i].x + plyr[c].entity[i].range >= 200){
       plyr[c^1].base.hp -= plyr[c].entity[i].damage;
@@ -339,6 +401,12 @@ function removeBattleHistory(ID){
       break;
     }
   }
+  for(var l of random_lobby){
+    if (l.id == ID){
+      l.flag = true;
+      break;
+    }
+  }
 }
 
 function clearBattles(){
@@ -364,6 +432,5 @@ var loopGame = setInterval(upkeep, 1000);
 var loopCleanup2 = setInterval(clearBattles, 1000000);
 var loopLog = setInterval(logData, 10000);
 
-app.listen(80);
-console.log("listening on port 80");
-
+app.listen(8001);
+console.log("listening on port 8001");

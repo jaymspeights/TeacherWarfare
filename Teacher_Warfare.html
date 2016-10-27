@@ -30,29 +30,69 @@
       var end = false;
       var NAME;
       var WINNER;
-
+      var base;
+      var stack=[];
+      var moustache;
+      var dale;
+      var bynosaur;
+      var wevodoge;
+      var random = false;
       window.onload = function(){
+        createImageBitmap(document.getElementById("moustache")).then(function(img){moustache = img});
+        createImageBitmap(document.getElementById("bynosaur")).then(function(img){bynosaur = img});
+        createImageBitmap(document.getElementById("dale")).then(function(img){dale = img});
+        createImageBitmap(document.getElementById("wevodoge")).then(function(img){wevodoge = img});
+      }
 
+      function getBitmap(name){
+        if (name == "moustache") return moustache;
+        if (name == "dale") return dale;
+        if (name == "wevodoge") return wevodoge;
+        if (name == "bynosaur") return bynosaur;
       }
 
       function send(key){
-        if(KEY!=null && ID!=null && HOST!=null && NAME!=null) {
+        if(base!=null&&KEY!=null && ID!=null && HOST!=null && NAME!=null) {
           var command = null
           switch(key.toLowerCase()){
             case 'q':
-                  command = 0;
+                  if (base.gold>=base.level*100){
+                    base.gold -= 100;
+                    command = 0;
+                    base.level+=1
+                  }
                   break;
             case 'w':
-                  command = 1;
+                  if (base.gold>=30){
+                    base.gold -= 30;
+                    command = 1;
+                    stack[stack.length] = {"class":"bynosaur","hp":75};
+                    drawStack();
+                  }
                   break;
             case 'e':
-                  command = 2;
+                  if (base.gold>=75){
+                    base.gold -= 75;
+                    command = 2;
+                    stack[stack.length] = {"class":"wevodoge","hp":15};
+                    drawStack();
+                  }
                   break;
             case 'r':
-                  command = 3;
+                  if (base.gold>=150){
+                    base.gold -= 150;
+                    command = 3;
+                    stack[stack.length] = {"class":"moustache","hp":300};
+                    drawStack();
+                  }
                   break;
             case 't':
-                  command = 4;
+                  if (base.gold>=300){
+                    base.gold -= 300;
+                    command = 4;
+                    stack[stack.length] = {"class":"dale","hp":200};
+                    drawStack();
+                  }
           }
           if (command!=null){
             var req = {"command": command, "key": KEY, "name": NAME, "host": HOST, "id": ID};
@@ -62,6 +102,20 @@
           }
         }
         else {console.log(key)}
+      }
+
+      function drawStack(){
+        ctx.font = "10px Comic Sans MS";
+        ctx.textAlign = "right";
+        var loc=150-64;
+        var count;
+        var i
+        var j;
+        for (i=0;i<stack.length;i+=1){
+          count=stack.length-1-i;
+          ctx.drawImage(getBitmap(stack[i].class),loc, 220 - count*12)
+          ctx.fillText(stack[i].hp,loc+63,230 - count*12);
+        }
       }
 
       function clearTree(node){
@@ -81,6 +135,10 @@
         var elem=document.getElementById("join");
         elem.hidden^=true;
       }
+      function clickRandom() {
+        var elem=document.getElementById("random");
+        elem.hidden^=true;
+      }
       function createGame() {
         var name = document.getElementById("cname").value;
         if (name=="Name") name = "Too lazy to enter a name";
@@ -96,6 +154,24 @@
           else{console.log(status);}
         });
       }
+
+      function createRandomGame() {
+        var name = document.getElementById("rname").value;
+        if (name=="Name") name = "Too lazy to enter a name";
+        var req = {"name": name};
+        NAME = name;
+        $.post("/join_random", req, function(data, status){
+          if (status=="success"){
+            ID = data.id;
+            HOST = data.host;
+            KEY = data.key;
+            random=true;
+            joinLobby();
+          }
+          else{console.log(status);}
+        });
+      }
+
       function joinGame() {
         var name = document.getElementById("jname").value;
         if (name=="Name") name = "Too lazy to enter a name";
@@ -129,19 +205,21 @@
         loop = setInterval(getStatus,1000);
       }
       function getStatus() {
-        var req = {"id": ID}
-        console.log(req);
+        var req = {"id": ID, "random": random}
         $.post("/status", req, function(data, status){
           if (status =="success"){
-            console.log(data)
-            console.log(data.name)
             if (data.name == null){
               console.log("Game Starting");
               clearInterval(loop);
               loop = setInterval(game,1000);
             }
+            else if (data.random){
+              ctx.font = "60px Comic Sans MS";
+              ctx.fillStyle = "white";
+              ctx.textAlign = "center";
+              ctx.fillText("Waiting for another player",c.width/2,c.height/2);
+            }
             else{
-              console.log(data);
               ctx.font = "60px Comic Sans MS";
               ctx.fillStyle = "white";
               ctx.textAlign = "center";
@@ -153,8 +231,11 @@
         });
       }
       function game(){
+        stack=[];
         var req = {"host": HOST, "id":ID};
         $.post("/game", req, function(data){
+          if (data.you!=null&&data.you.base!=null)
+            base=data.you.base;
           if(data.you != null) {
             console.log(data.you);
             console.log(data.them);
@@ -226,12 +307,10 @@
           var i;
           var j;
           for (i=0;i<you.entity.length;i+=1){
-            console.log("i"+i)
             loc = (you.entity[i].x*2.5) - 64 + 150;
             count=0;
             j=1+i;
             for(;j<you.entity.length;j+=1){
-              console.log("j"+j +"i"+i + "length"+you.entity.length)
               if (j<you.entity.length){
               var x = (you.entity[j].x*2.5) - 64 + 150;
               if (loc == x)
@@ -240,7 +319,7 @@
                 break;
               }
             }
-            ctx.drawImage(document.getElementById(you.entity[i].class),loc, 220 - count*12)
+            ctx.drawImage(getBitmap(you.entity[i].class),loc, 220 - count*12)
             ctx.fillText(you.entity[i].hp,loc+63,230 - count*12);
           }
           ctx.textAlign = "left";
@@ -257,7 +336,7 @@
                   break;
               }
             }
-            ctx.drawImage(document.getElementById(them.entity[i].class),loc, 220 - count*12)
+            ctx.drawImage(getBitmap(them.entity[i].class),loc, 220 - count*12)
             ctx.fillText(them.entity[i].hp,loc+1,230 - count*12);
           }
         }
@@ -284,19 +363,26 @@
       }
     </style>
     <div id="menu" class="row" style="margin-top: 3px">
-      <div class="col-sm-6">
+      <div class="col-sm-4">
         <button type="button" onclick=clickCreate() class="center left btn btn-default">Create Game</button>
         <div id="create" hidden>
           <input type="text" class="center left gap" id="cname" value="Name">
           <button type="button" onclick=createGame() class="center left btn btn-default top">Create</button>
         </div>
       </div>
-      <div class="col-sm-6">
-        <button type="button" onclick=clickJoin() class="center right btn btn-default">join Game</button>
+      <div class="col-sm-4">
+        <button type="button" onclick=clickJoin() class="center right btn btn-default">Join Game</button>
         <div id="join" hidden>
           <input type="text" class="center right gap" id="jname" value="Name">
           <input type="text" class="center right top" id="jid" value="Key">
           <button type="button" onclick=joinGame() class="center right btn btn-default top">Join</button>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <button type="button" onclick=clickRandom() class="center btn btn-default">Random Opponent</button>
+        <div id="random" hidden>
+          <input type="text" class="center gap" id="rname" value="Name">
+          <button type="button" onclick=createRandomGame() class="center btn btn-default top">Join</button>
         </div>
       </div>
     </div>
