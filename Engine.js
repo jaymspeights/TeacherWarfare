@@ -105,6 +105,8 @@ app.post('/join', function (req, res) {
 });
 
 app.post('/join_random', function (req, res) {
+  console.log("joining")
+  console.log(random_lobby)
   if (req.body!=null){
     var p = getFirstLobby();
     if (p==null&&req.body.name!=null)  {
@@ -130,6 +132,7 @@ app.post('/join_random', function (req, res) {
     else if (req.body.name!=null){
       var key = Math.floor(Math.random()*99999);
       var today = new Date();
+      p.date = today.getTime() + 1000000
       var b = {"player0":p.name + "_1" + p.id, "player1": req.body.name + "_0" + p.id, "id": p.id, "date":today.getTime()};
       var p0 = {"entity": [], "base": {"hp": 1000, "gold": 0, "level": 1},"name":b.player0, "key": p.key};
       var p1 = {"entity": [], "base": {"hp": 1000, "gold": 0, "level": 1},"name":b.player1, "key": key};
@@ -174,10 +177,18 @@ app.post('/status', function(req, res){
       res.send(p);
     else res.sendStatus(400);
   }
-  else if (req.body!=null&&req.body.random){
-    let p = getRandomLobbyById(req.body.id);
-    if (p!=null)
+  else if (req.body!=null&&req.body.random =='true'){
+    console.log("status")
+    let p = getFirstLobby();
+    if (p!=null){
+
+      var today = new Date();
+      let pp = copy(p)
+      pp.date = today.getTime();
+      random_lobby[random_lobby.length] = pp;
+      console.log(random_lobby)
       res.send(p);
+    }
     else res.sendStatus(400);
   }
   else{res.sendStatus(400);}
@@ -208,6 +219,14 @@ function getLobbyById(ID){
     }
   }
 }
+
+function copy(p){
+  let pp = [];
+  for (var k in p)
+    pp[k] = p[k];
+  return pp;
+}
+
 function getFirstLobby(){
   for (let l of random_lobby){
     if (l.name!=null){
@@ -402,7 +421,7 @@ function clearLobby(){
     }
   }
   for (let i = (random_lobby.length - 1); i >= 0; i -= 1){
-    if (random_lobby[i].date + 1000000 < now || random_lobby[i].flag == true){
+    if (random_lobby[i].date + 2000 < now || random_lobby[i].flag == true){
       random_lobby.splice(i, 1);
     }
   }
@@ -426,10 +445,10 @@ function logData(){
 }
 
 
-var loopCleanup1 = setInterval(clearLobby, 60000);
+var loopCleanup1 = setInterval(clearLobby, 1000);
 var loopGame = setInterval(upkeep, 666);
 var loopCleanup2 = setInterval(clearBattles, 60000);
 var loopLog = setInterval(logData, 10000);
 
-app.listen(80);
+app.listen(8001);
 console.log("listening on port 80");
