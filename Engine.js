@@ -7,6 +7,7 @@ var battle = [];
 var lobby = []
 
 app.get('/', function (req, res) {
+  console.log("got a request!");
   res.sendFile(__dirname + "/Teacher_Warfare.html")
 });
 
@@ -21,7 +22,7 @@ app.post('/controller', function (req, res) {
   var command = req.body.command;
   var name = req.body.name + "_" + req.body.host + req.body.id;
   var plyr = getPlayerByName(name);
-  if (plyr.start != null && plyr.key == req.body.key){
+  if (plyr!=null && plyr.start != null && plyr.key == req.body.key){
     switch(command){
       case '0':
           if (plyr.base.gold>(plyr.base.level*100)){
@@ -140,9 +141,7 @@ app.post('/status', function(req, res){
 });
 
 function getPlayerByName(name){
-  console.log(player)
-  console.log(name)
-  for (var i in player){
+   for (var i in player){
     if (player[i].name == name)
       return player[i];
   }
@@ -197,7 +196,8 @@ function clearLobby(){
 
 function upkeep(){
   for (let b of battle){
-    tick(b);
+    if(b.player0!=null)
+      tick(b);
   }
 }
 
@@ -350,11 +350,20 @@ function clearBattles(){
   }
 }
 
-clearLobby();
-clearBattles();
-var loopCleanup1 = setInterval(clearLobby, 86400000);
+function getData(){
+  return {"players":players.length,"lobby":lobby.length};
+}
+
+function logData(){
+  console.log("\nPlayers: "+player.length+"\nLobby size: "+lobby.length+"\nBattles: "+battle.length);
+}
+
+
+var loopCleanup1 = setInterval(clearLobby, 1000000);
 var loopGame = setInterval(upkeep, 1000);
-var loopCleanup2 = setInterval(clearBattles, 86400000);
+var loopCleanup2 = setInterval(clearBattles, 1000000);
+var loopLog = setInterval(logData, 10000);
 
 app.listen(80);
-console.log("listening");
+console.log("listening on port 80");
+

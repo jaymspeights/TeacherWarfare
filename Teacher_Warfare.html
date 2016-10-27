@@ -218,7 +218,7 @@
         }
         function recurseDraw(data){
           ctx.font = "10px Comic Sans MS";
-          ctx.textAlign = "left";
+          ctx.textAlign = "right";
           var you = data.you;
           var them = data.them;
           var loc;
@@ -241,9 +241,9 @@
               }
             }
             ctx.drawImage(document.getElementById(you.entity[i].class),loc, 220 - count*12)
-            ctx.fillText(you.entity[i].hp,loc,230 - count*12);
+            ctx.fillText(you.entity[i].hp,loc+63,230 - count*12);
           }
-          ctx.textAlign = "right";
+          ctx.textAlign = "left";
           for (i=0;i<them.entity.length;i+=1){
             loc = 650 - (them.entity[i].x*2.5);
             count=0;
@@ -258,7 +258,7 @@
               }
             }
             ctx.drawImage(document.getElementById(them.entity[i].class),loc, 220 - count*12)
-            ctx.fillText(them.entity[i].hp,loc+64,230 - count*12);
+            ctx.fillText(them.entity[i].hp,loc+1,230 - count*12);
           }
         }
         function help(){
