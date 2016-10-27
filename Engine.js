@@ -8,12 +8,10 @@ var lobby = [];
 var random_lobby = [];
 
 app.get('/', function (req, res) {
-  console.log("got a request!");
   res.sendFile(__dirname + "/Teacher_Warfare.html")
 });
 
 app.get('/*', function (req, res) {
-  console.log(req.url)
    res.sendFile(__dirname +"/pictures" +req.url);
 });
 
@@ -35,7 +33,7 @@ app.post('/controller', function (req, res) {
       case '1':
           if (plyr.base.gold>30){
             plyr.base.gold-=30;
-            plyr.entity[plyr.entity.length] = {'class': 'bynosaur', 'damage': 15, 'hp': 75, 'x':0, 'speed': 10, 'range': 0, 'hits':1, 'cost': 30};
+            plyr.entity[plyr.entity.length] = {'class': 'bynosaur', 'damage': 25, 'hp': 75, 'x':0, 'speed': 10, 'range': 0, 'hits':1, 'cost': 30};
             res.sendStatus(200);
           }
           break;
@@ -68,7 +66,6 @@ app.post('/controller', function (req, res) {
 });
 
 app.post('/create', function (req, res) {
-  console.log("got a create request");
   var game_id = Math.floor(Math.random()*99000 + 1);
   var set_id = false;
   while(!set_id){
@@ -90,7 +87,6 @@ app.post('/create', function (req, res) {
 });
 
 app.post('/join', function (req, res) {
-  console.log("post join request");
   var p = getLobbyById(req.body.id);
   if (p!=null){
     var key = Math.floor(Math.random()*99999);
@@ -109,7 +105,6 @@ app.post('/join', function (req, res) {
 });
 
 app.post('/join_random', function (req, res) {
-  console.log("post join random request");
   if (req.body!=null){
     var p = getFirstLobby();
     if (p==null&&req.body.name!=null)  {
@@ -240,21 +235,6 @@ function getBattleById(ID){
   }
 }
 
-function clearLobby(){
-  console.log("clear called");
-  var today = new Date();
-  var now = today.getTime();
-  for (var i = (lobby.length); i > 0; i -= 1){
-    if (lobby[i].date + 10000000 < now || lobby[i].flag == true){
-      lobby.splice(i, 1);
-    }
-  }
-  for (var i = (random_lobby.length); i > 0; i -= 1){
-    if (random_lobby[i].date + 10000000 < now || random_lobby[i].flag == true){
-      random_lobby.splice(i, 1);
-    }
-  }
-}
 
 function upkeep(){
   for (let b of battle){
@@ -313,8 +293,9 @@ function tick(b){
     }
   }
 
-  front[c]= plyr[c].entity[0]==null ? 0:plyr[c].entity[0].x;
+  var newFront= plyr[c].entity[0]==null ? 0:plyr[c].entity[0].x;
   c = c^1;
+
   for (let i = 0; i < plyr[c].entity.length; i += 1) {
     //at base
     if (plyr[c].entity[i].x + plyr[c].entity[i].range >= 200){
@@ -335,20 +316,20 @@ function tick(b){
         else break;
       }
     }
-    else if (plyr[c].entity[i].x + plyr[c].entity[i].range + front[c^1] < 200){
-      plyr[c].entity[i].x = ((plyr[c].entity[i].x + plyr[c].entity[i].speed) < (200 - front[c^1])) ?  (plyr[c].entity[i].x + plyr[c].entity[i].speed):(200 - front[c^1]);
+    else if (plyr[c].entity[i].x + plyr[c].entity[i].range + newFront < 200){
+      plyr[c].entity[i].x = ((plyr[c].entity[i].x + plyr[c].entity[i].speed) < (200 - newFront)) ?  (plyr[c].entity[i].x + plyr[c].entity[i].speed):(200 - newFront);
     }
   }
 
   //REMOVE DEAD ENTITIES
   for (var i = plyr0.entity.length-1;i>=0;i-=1){
     if (plyr0.entity[i].hp <=0){
-      plyr0.entity.splice(i);
+      plyr0.entity.splice(i,1);
     }
   }
   for (var i = plyr1.entity.length-1;i>=0;i-=1){
     if (plyr1.entity[i].hp <=0){
-      plyr1.entity.splice(i);
+      plyr1.entity.splice(i,1);
     }
   }
 
@@ -377,7 +358,6 @@ function removeByName(name){
 }
 
 function endBattle(ID, winner) {
-  console.log("ending battle")
   for(var b of battle){
     if (b.id == ID){
       b.player0 = null;
@@ -409,27 +389,42 @@ function removeBattleHistory(ID){
   }
 }
 
+function clearLobby(){
+  var today = new Date();
+  var now = today.getTime();
+  for (let i = (lobby.length - 1); i >= 0; i -= 1){
+    if (lobby[i].date + 1000000 < now || lobby[i].flag == true){
+      lobby.splice(i, 1);
+    }
+  }
+  for (let i = (random_lobby.length - 1); i >= 0; i -= 1){
+    if (random_lobby[i].date + 1000000 < now || random_lobby[i].flag == true){
+      random_lobby.splice(i, 1);
+    }
+  }
+}
+
 function clearBattles(){
   var today = new Date()
   for(var i = battle.length-1;i>=0;i-=1){
-    if (battle[i].flag == true || battle[i].date + 1000000<today.getTime()){
+    if (battle[i].flag == true || battle[i].date + 10000000<today.getTime() || (battle[i].date + 60000<today.getTime() && battle[i].player0==null)){
       battle.splice(i,1);
     }
   }
 }
 
 function getData(){
-  return {"players":players.length,"lobby":lobby.length};
+  return {"players":players.length,"lobby":lobby.length, "random_lobby":random_lobby.length};
 }
 
 function logData(){
-  console.log("\nPlayers: "+player.length+"\nLobby size: "+lobby.length+"\nBattles: "+battle.length);
+  console.log("\nPlayers: "+player.length+"\nLobby size: "+lobby.length+"\nRandom Lobby size: "+random_lobby.length+"\nBattles: "+battle.length);
 }
 
 
-var loopCleanup1 = setInterval(clearLobby, 1000000);
+var loopCleanup1 = setInterval(clearLobby, 60000);
 var loopGame = setInterval(upkeep, 1000);
-var loopCleanup2 = setInterval(clearBattles, 1000000);
+var loopCleanup2 = setInterval(clearBattles, 60000);
 var loopLog = setInterval(logData, 10000);
 
 app.listen(8001);

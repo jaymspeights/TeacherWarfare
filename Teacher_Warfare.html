@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8">
     <title>Teacher Warfare</title>
+    <link rel="icon" type="image/jpg" href="school700.jpg">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
@@ -141,7 +142,7 @@
       }
       function createGame() {
         var name = document.getElementById("cname").value;
-        if (name=="Name") name = "Too lazy to enter a name";
+        if (name=="") name = "Too lazy to enter a name";
         var req = {"name": name};
         NAME = name;
         $.post("/create", req, function(data, status){
@@ -157,7 +158,7 @@
 
       function createRandomGame() {
         var name = document.getElementById("rname").value;
-        if (name=="Name") name = "Too lazy to enter a name";
+        if (name=="") name = "Too lazy to enter a name";
         var req = {"name": name};
         NAME = name;
         $.post("/join_random", req, function(data, status){
@@ -174,7 +175,7 @@
 
       function joinGame() {
         var name = document.getElementById("jname").value;
-        if (name=="Name") name = "Too lazy to enter a name";
+        if (name=="") name = "Too lazy to enter a name";
         NAME = name;
         var myId = document.getElementById("jid").value;
         var req = {"name": name, "id": myId};
@@ -366,23 +367,23 @@
       <div class="col-sm-4">
         <button type="button" onclick=clickCreate() class="center left btn btn-default">Create Game</button>
         <div id="create" hidden>
-          <input type="text" class="center left gap" id="cname" value="Name">
+          <input type="text" class="center left gap" id="cname" value="" placeholder="Name">
           <button type="button" onclick=createGame() class="center left btn btn-default top">Create</button>
         </div>
       </div>
       <div class="col-sm-4">
-        <button type="button" onclick=clickJoin() class="center right btn btn-default">Join Game</button>
+        <button type="button" onclick=clickJoin() class="center btn btn-default">Join Game</button>
         <div id="join" hidden>
-          <input type="text" class="center right gap" id="jname" value="Name">
-          <input type="text" class="center right top" id="jid" value="Key">
-          <button type="button" onclick=joinGame() class="center right btn btn-default top">Join</button>
+          <input type="text" class="center gap" id="jname" value="" placeholder="Name">
+          <input type="text" class="center top" id="jid" value="" placeholder="Key">
+          <button type="button" onclick=joinGame() class="center btn btn-default top">Join</button>
         </div>
       </div>
       <div class="col-sm-4">
-        <button type="button" onclick=clickRandom() class="center btn btn-default">Random Opponent</button>
+        <button type="button" onclick=clickRandom() class="center right btn btn-default">Random Opponent</button>
         <div id="random" hidden>
-          <input type="text" class="center gap" id="rname" value="Name">
-          <button type="button" onclick=createRandomGame() class="center btn btn-default top">Join</button>
+          <input type="text" class="center right gap" id="rname" value="" placeholder="Name">
+          <button type="button" onclick=createRandomGame() class="center right btn btn-default top">Search</button>
         </div>
       </div>
     </div>
