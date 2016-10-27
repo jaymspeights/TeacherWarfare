@@ -37,12 +37,22 @@
       var dale;
       var bynosaur;
       var wevodoge;
+      var s0;
+      var s1;
+      var s2;
+      var s3;
+      var hell;
       var random = false;
       window.onload = function(){
         createImageBitmap(document.getElementById("moustache")).then(function(img){moustache = img});
         createImageBitmap(document.getElementById("bynosaur")).then(function(img){bynosaur = img});
         createImageBitmap(document.getElementById("dale")).then(function(img){dale = img});
         createImageBitmap(document.getElementById("wevodoge")).then(function(img){wevodoge = img});
+        createImageBitmap(document.getElementById("s0")).then(function(img){s0 = img});
+        createImageBitmap(document.getElementById("s1")).then(function(img){s1 = img});
+        createImageBitmap(document.getElementById("s2")).then(function(img){s2 = img});
+        createImageBitmap(document.getElementById("s3")).then(function(img){s3 = img});
+        createImageBitmap(document.getElementById("hell")).then(function(img){hell = img});
       }
 
       function getBitmap(name){
@@ -50,6 +60,11 @@
         if (name == "dale") return dale;
         if (name == "wevodoge") return wevodoge;
         if (name == "bynosaur") return bynosaur;
+        if (name == "s0") return s0;
+        if (name == "s1") return s1;
+        if (name == "s2") return s2;
+        if (name == "s3") return s3;
+        if (name == "hell") return hell;
       }
 
       function send(key){
@@ -145,6 +160,7 @@
         if (name=="") name = "Too lazy to enter a name";
         var req = {"name": name};
         NAME = name;
+        console.log(req)
         $.post("/create", req, function(data, status){
           if (status=="success"){
             ID = data.id;
@@ -179,7 +195,6 @@
         NAME = name;
         var myId = document.getElementById("jid").value;
         var req = {"name": name, "id": myId};
-        console.log(req);
         $.post("/join",req,function(data, status){
           if(status=="success"){
             ID = data.id;
@@ -194,25 +209,25 @@
         c = document.createElement("canvas");
         c.width = 800;
         c.height = 300
-        c.setAttribute("tabindex", 0);
+        c.setAttribute("tabindex", 1);
         c.addEventListener("keydown", function(){send(event.key)})
         ctx = c.getContext("2d");
         var div = document.getElementById("canvas");
         clearTree(document.getElementById("menu"));
         div.appendChild(c);
         document.getElementById("control").hidden = false;
-        ctx.drawImage(document.getElementById("hell"),0,0);
+        ctx.drawImage(hell,0,0);
         getStatus();
-        loop = setInterval(getStatus,1000);
+        loop = setInterval(getStatus,500);
       }
       function getStatus() {
         var req = {"id": ID, "random": random}
         $.post("/status", req, function(data, status){
-          if (status =="success"){
+          if (status == "success"){
             if (data.name == null){
               console.log("Game Starting");
               clearInterval(loop);
-              loop = setInterval(game,1000);
+              loop = setInterval(game,500);
             }
             else if (data.random){
               ctx.font = "60px Comic Sans MS";
@@ -240,7 +255,7 @@
           if(data.you != null) {
             console.log(data.you);
             console.log(data.them);
-            ctx.drawImage(document.getElementById("hell"),0,0);
+            ctx.drawImage(hell,0,0);
             if(data.you.base.gold<50 && start){
               ctx.font = "60px Comic Sans MS";
               ctx.fillStyle = "white";
@@ -293,8 +308,8 @@
         ctx.textAlign = "left";
         ctx.fillText("HP: "+ you.base.hp + "  Gold: "+you.base.gold+"  Level: " + you.base.level, 5, 45);
         ctx.fillText(you.name,5, 20);
-        ctx.drawImage(document.getElementById("s"+Math.floor(you.base.hp/251)),150-128,300-129);
-        ctx.drawImage(document.getElementById("s"+Math.floor(them.base.hp/251)),650,300-129);
+        ctx.drawImage(getBitmap("s"+Math.floor(you.base.hp/251)),150-128,300-129);
+        ctx.drawImage(getBitmap("s"+Math.floor(them.base.hp/251)),650,300-129);
         ctx.font = "10px Comic Sans MS";
         recurseDraw(data)
         }
@@ -398,9 +413,11 @@
       <button type="button" onclick=help() class="btn btn-default col-sm-2">CONTROLS</button>
     </span>
     <pre id="help" hidden>
-      Base:: button: Q, increases the amount of gold you get per frame by 5
+      Press buttons or use your keyboard
 
-      Bynosaur:: button: W, damage: 15, hp: 75, speed: 10, range: 0, hits:1, cost: 30
+      Base:: button: Q, increases the amount of gold you get per frame by 5, cost: (LEVEL)x100
+
+      Bynosaur:: button: W, damage: 25, hp: 75, speed: 10, range: 0, hits:1, cost: 30
 
       Wevodoge:: button: E, damage: 50, hp: 15, speed': 10, range: 10, hits:1, cost: 75
 

@@ -24,35 +24,35 @@ app.post('/controller', function (req, res) {
   if (plyr!=null && plyr.start != null && plyr.key == req.body.key){
     switch(command){
       case '0':
-          if (plyr.base.gold>(plyr.base.level*100)){
+          if (plyr.base.gold>=(plyr.base.level*100)){
             plyr.base.gold -= plyr.base.level*100;
             plyr.base.level += 1;
             res.sendStatus(200);
           }
           break;
       case '1':
-          if (plyr.base.gold>30){
+          if (plyr.base.gold>=30){
             plyr.base.gold-=30;
             plyr.entity[plyr.entity.length] = {'class': 'bynosaur', 'damage': 25, 'hp': 75, 'x':0, 'speed': 10, 'range': 0, 'hits':1, 'cost': 30};
             res.sendStatus(200);
           }
           break;
       case '2':
-          if (plyr.base.gold>75){
+          if (plyr.base.gold>=75){
             plyr.base.gold-=75;
             plyr.entity[plyr.entity.length] = {'class': 'wevodoge', 'damage': 50, 'hp': 15, 'x':0, 'speed': 10, 'range': 10, 'hits':1, 'cost': 75};
             res.sendStatus(200);
           }
           break;
       case '3':
-          if (plyr.base.gold>150){
+          if (plyr.base.gold>=150){
             plyr.base.gold-=150;
             plyr.entity[plyr.entity.length] = {'class': 'moustache', 'damage': 15, 'hp': 300, 'x':0, 'speed': 10, 'range': 0, 'hits':1, 'cost': 150};
             res.sendStatus(200);
           }
           break;
       case '4':
-          if (plyr.base.gold>300){
+          if (plyr.base.gold>=300){
             plyr.base.gold-=300;
             plyr.entity[plyr.entity.length] = {'class': 'dale', 'damage': 75, 'hp': 200, 'x':0, 'speed': 10, 'range': 0, 'hits':3, 'cost': 300};
             res.sendStatus(200);
@@ -168,13 +168,17 @@ app.post('/game', function(req, res) {
 });
 
 app.post('/status', function(req, res){
-  if(req.body!=null&&!req.body.random){
-    var plyr = getLobbyById(req.body.id);
-    res.send(plyr);
+  if(req.body!=null&&req.body.random=='false'){
+    let p = getLobbyById(req.body.id);
+    if (p!=null)
+      res.send(p);
+    else res.sendStatus(400);
   }
   else if (req.body!=null&&req.body.random){
-    var plyr = getRandomLobbyById(req.body.id)
-    res.send(plyr);
+    let p = getRandomLobbyById(req.body.id);
+    if (p!=null)
+      res.send(p);
+    else res.sendStatus(400);
   }
   else{res.sendStatus(400);}
 });
@@ -423,9 +427,9 @@ function logData(){
 
 
 var loopCleanup1 = setInterval(clearLobby, 60000);
-var loopGame = setInterval(upkeep, 1000);
+var loopGame = setInterval(upkeep, 500);
 var loopCleanup2 = setInterval(clearBattles, 60000);
 var loopLog = setInterval(logData, 10000);
 
 app.listen(8001);
-console.log("listening on port 8001");
+console.log("listening on port 80");
