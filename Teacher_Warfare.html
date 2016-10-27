@@ -218,7 +218,7 @@
         document.getElementById("control").hidden = false;
         ctx.drawImage(hell,0,0);
         getStatus();
-        loop = setInterval(getStatus,500);
+        loop = setInterval(getStatus,666);
       }
       function getStatus() {
         var req = {"id": ID, "random": random}
@@ -227,7 +227,7 @@
             if (data.name == null){
               console.log("Game Starting");
               clearInterval(loop);
-              loop = setInterval(game,500);
+              loop = setInterval(game,666);
             }
             else if (data.random){
               ctx.font = "60px Comic Sans MS";

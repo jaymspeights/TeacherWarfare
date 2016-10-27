@@ -427,9 +427,9 @@ function logData(){
 
 
 var loopCleanup1 = setInterval(clearLobby, 60000);
-var loopGame = setInterval(upkeep, 500);
+var loopGame = setInterval(upkeep, 666);
 var loopCleanup2 = setInterval(clearBattles, 60000);
 var loopLog = setInterval(logData, 10000);
 
-app.listen(8001);
+app.listen(80);
 console.log("listening on port 80");
