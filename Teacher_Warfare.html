@@ -13,11 +13,6 @@
     <img id="s0" src="school0.jpg" hidden/>
     <img id="s1" src="school400.jpg" hidden/>
     <img id="s2" src="school700.jpg" hidden/>
-    <img id="s3" src="school1000.jpg" hidden/>
-    <img id="moustache" src="Moustache.jpg" hidden/>
-    <img id="dale" src="Dale.jpg" hidden/>
-    <img id="bynosaur" src="Bynosaur.jpeg" hidden/>
-    <img id="wevodoge" src="wevodoge.jpg" hidden/>
     <div class="row"><img class="col-sm-2" src="burn_school.gif"/><img class="col-sm-8" id="logo" src="logo.gif" /><img class="col-sm-2" src="burn_school.gif"/></div>
     <script>
     'use strict';
@@ -42,6 +37,8 @@
       var s2;
       var s3;
       var hell;
+      var jeff;
+      var ddubs;
       var random = false;
       var player;
       window.onload = function(){
@@ -54,6 +51,8 @@
         createImageBitmap(document.getElementById("s2")).then(function(img){s2 = img});
         createImageBitmap(document.getElementById("s3")).then(function(img){s3 = img});
         createImageBitmap(document.getElementById("hell")).then(function(img){hell = img});
+        createImageBitmap(document.getElementById("ddubs")).then(function(img){ddubs = img});
+        createImageBitmap(document.getElementById("jeff")).then(function(img){jeff = img});
       }
 
       function getBitmap(name){
@@ -66,6 +65,8 @@
         if (name == "s2") return s2;
         if (name == "s3") return s3;
         if (name == "hell") return hell;
+        if (name == "ddubs") return ddubs;
+        if (name == "jeff") return jeff;
       }
 
       function send(key){
@@ -108,6 +109,20 @@
                     base.gold -= 300;
                     command = 4;
                     stack[stack.length] = {"class":"dale","hp":200};
+                    drawStack();
+                  }
+            case 'a':
+                  if (base.gold>=125){
+                    base.gold -= 125;
+                    command = 5;
+                    stack[stack.length] = {"class":"ddubs","hp":75};
+                    drawStack();
+                  }
+            case 's':
+                  if (base.gold>=250){
+                    base.gold -= 250;
+                    command = 6;
+                    stack[stack.length] = {"class":"jeff","hp":100};
                     drawStack();
                   }
           }
@@ -286,14 +301,14 @@
             console.log(data.you);
             console.log(data.them);
             ctx.drawImage(hell,0,0);
-            if(data.you.base.gold<50 && start){
+            if(data.you.base.gold<50 && data.you.start==null){
               ctx.font = "60px Comic Sans MS";
               ctx.fillStyle = "white";
               ctx.textAlign = "center";
               var time = (100 - data.you.base.gold) / 10;
               ctx.fillText("Game starting in " + time, c.width/2, c.height/2);
             }
-            else if (data.you.base.gold<100 && start){
+            else if (data.you.base.gold<100 && data.you.start==null){
               ctx.font = "20px Comic Sans MS";
               var you = data.you;
               var them = data.them;
@@ -407,6 +422,10 @@
       .right {
         margin-right: 5%;
       }
+      .control{
+        width: 800px;
+        margin:auto;
+      }
     </style>
     <div id="menu" class="row" style="margin-top: 3px">
       <div class="col-sm-4">
@@ -434,14 +453,24 @@
     </div>
     <div id="listen"></div>
     <div class="top" style="text-align: center" id="canvas"></div>
-    <span class="row" id="control" hidden>
-      <button type="button" onclick=send('q') class="btn btn-default col-sm-2">Q</button>
-      <button type="button" onclick=send('w') class="btn btn-default col-sm-2">W</button>
-      <button type="button" onclick=send('e') class="btn btn-default col-sm-2">E</button>
-      <button type="button" onclick=send('r') class="btn btn-default col-sm-2">R</button>
-      <button type="button" onclick=send('t') class="btn btn-default col-sm-2">T</button>
-      <button type="button" onclick=help() class="btn btn-default col-sm-2">CONTROLS</button>
-    </span>
+    <div id="control" class="control" hidden>
+      <span class="row">
+        <img id="s3" onclick=send('q') src="school1000.jpg" class="col-sm-2"/>
+        <img id="bynosaur" onclick=send('w') src="Bynosaur.jpeg" class="col-sm-2"/>
+        <img id="wevodoge" onclick=send('e') src="wevodoge.jpg" class="col-sm-2"/>
+        <img id="moustache" onclick=send('e') src="Moustache.jpg" class="col-sm-2"/>
+        <img id="dale" onclick=send('t') src="Dale.jpg" class="col-sm-2"/>
+        <img onclick=help() src="controls.png" class="col-sm-2"/>
+      </span>
+      <span class="row">
+        <img id="ddubs" onclick=send('a') src="ddubs.jpg" class="col-sm-2"/>
+        <img id="jeff" onclick=send('s') src="jeff.jpg" class="col-sm-2"/>
+        <img id="blank" onclick="" src="blank.gif" class="col-sm-2"/>
+        <img id="blank" onclick="" src="blank.gif" class="col-sm-2"/>
+        <img id="blank" onclick="" src="blank.gif" class="col-sm-2"/>
+        <img id="blank" onclick="" src="blank.gif" class="col-sm-2"/>
+      </span>
+    </div>
     <pre id="help" hidden>
       Press buttons or use your keyboard
 
@@ -454,6 +483,10 @@
       Moustache:: button: R, damage: 15, hp: 300, speed: 10, range: 0, hits:1, cost: 150
 
       Dale:: button: T, damage: 75, hp: 200, speed: 10, range: 0, hits:3, cost: 300
+
+      DDubs:: button: A, damage: 20, hp: 75, speed': 15, range: 30, hits:3, cost: 125
+
+      Jeff:: button: S, damage: 100, hp: 100, speed: 25, range: 0, hits:2, cost: 250
     </pre>
   </body>
 </html>

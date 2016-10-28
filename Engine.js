@@ -7,7 +7,7 @@ var battle = [];
 var lobby = [];
 var random_lobby = [];
 var game_count = 0;
-var PORT = 80;
+var PORT = 8001;
 var random = [];
 
 app.get('/', function (req, res) {
@@ -58,6 +58,20 @@ app.post('/controller', function (req, res) {
           if (plyr.base.gold>=300){
             plyr.base.gold-=300;
             plyr.entity[plyr.entity.length] = {'class': 'dale', 'damage': 75, 'hp': 200, 'x':0, 'speed': 10, 'range': 0, 'hits':3, 'cost': 300};
+            res.sendStatus(200);
+          }
+          break;
+      case '5':
+          if (plyr.base.gold>=125){
+            plyr.base.gold-=125;
+            plyr.entity[plyr.entity.length] = {'class': 'ddubs', 'damage': 20, 'hp': 75, 'x':0, 'speed': 15, 'range': 30, 'hits':3, 'cost': 125};
+            res.sendStatus(200);
+          }
+          break;
+      case '6':
+          if (plyr.base.gold>=250){
+            plyr.base.gold-=250;
+            plyr.entity[plyr.entity.length] = {'class': 'jeff', 'damage': 100, 'hp': 100, 'x':0, 'speed': 25, 'range': 0, 'hits':2, 'cost': 250};
             res.sendStatus(200);
           }
           break;
