@@ -43,6 +43,7 @@
       var s3;
       var hell;
       var random = false;
+      var player;
       window.onload = function(){
         createImageBitmap(document.getElementById("moustache")).then(function(img){moustache = img});
         createImageBitmap(document.getElementById("bynosaur")).then(function(img){bynosaur = img});
@@ -182,13 +183,48 @@
             ID = data.id;
             HOST = data.host;
             KEY = data.key;
+            player = data;
             random=true;
-            joinLobby();
+            joinRLobby();
           }
           else{console.log(status);}
         });
       }
-
+      function joinRLobby(){
+        c = document.createElement("canvas");
+        c.width = 800;
+        c.height = 300
+        c.setAttribute("tabindex", 1);
+        c.addEventListener("keydown", function(){send(event.key)})
+        ctx = c.getContext("2d");
+        var div = document.getElementById("canvas");
+        clearTree(document.getElementById("menu"));
+        div.appendChild(c);
+        document.getElementById("control").hidden = false;
+        ctx.drawImage(hell,0,0);
+        getRStatus();
+        loop = setInterval(getRStatus,666);
+      }
+      function getRStatus() {
+        console.log(player)
+        $.post("/Rstatus", player, function(data, status){
+          if (status == "success"){
+            if (data.name == null){
+              console.log("Game Starting");
+              clearInterval(loop);
+              loop = setInterval(game,666);
+            }
+            else {
+              player = data;
+              ctx.font = "60px Comic Sans MS";
+              ctx.fillStyle = "white";
+              ctx.textAlign = "center";
+              ctx.fillText("Waiting for another player",c.width/2,c.height/2);
+            }
+          }
+          else {console.log(status)};
+        });
+      }
       function joinGame() {
         var name = document.getElementById("jname").value;
         if (name=="") name = "Too lazy to enter a name";
@@ -221,19 +257,13 @@
         loop = setInterval(getStatus,666);
       }
       function getStatus() {
-        var req = {"id": ID, "random": random}
+        var req = {"id": ID}
         $.post("/status", req, function(data, status){
           if (status == "success"){
             if (data.name == null){
               console.log("Game Starting");
               clearInterval(loop);
               loop = setInterval(game,666);
-            }
-            else if (data.random){
-              ctx.font = "60px Comic Sans MS";
-              ctx.fillStyle = "white";
-              ctx.textAlign = "center";
-              ctx.fillText("Waiting for another player",c.width/2,c.height/2);
             }
             else{
               ctx.font = "60px Comic Sans MS";

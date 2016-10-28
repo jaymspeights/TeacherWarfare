@@ -6,6 +6,9 @@ var player = [];
 var battle = [];
 var lobby = [];
 var random_lobby = [];
+var game_count = 0;
+var PORT = 80;
+var random = [];
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + "/Teacher_Warfare.html")
@@ -105,16 +108,14 @@ app.post('/join', function (req, res) {
 });
 
 app.post('/join_random', function (req, res) {
-  console.log("joining")
-  console.log(random_lobby)
   if (req.body!=null){
-    var p = getFirstLobby();
-    if (p==null&&req.body.name!=null)  {
-      var game_id = Math.floor(Math.random()*99000 + 1);
+    let p = getFirstLobby();
+    if (p==null)  {
+      var game_id = Math.floor(Math.random()*99000 + 100000);
       var set_id = false;
       while(!set_id){
         set_id = true;
-        for (var id of random_lobby){
+        for (var id of lobby){
           if (game_id == id.id){
           game_id += 1;
           set_id = false;
@@ -123,24 +124,23 @@ app.post('/join_random', function (req, res) {
         }
       }
       var today = new Date();
-      var key = Math.floor(Math.random()*99999);
-      var plyr = {"name": req.body.name, "key": key, "id": game_id, "date": today.getTime(), "random": true};
-      var data = {"id": game_id, "key": key, "host": 1};
-      random_lobby[random_lobby.length] = plyr;
-      res.status(200).send(data);
+      var key = Math.floor(Math.random()*99999+100000);
+      var plyr = {"name": req.body.name, "key": key, "id": game_id, "date": today.getTime(), "random": true, "host": 1};
+      random[random.length] = plyr;
+      res.status(200).send(plyr);
     }
     else if (req.body.name!=null){
-      var key = Math.floor(Math.random()*99999);
+      var key = Math.floor(Math.random()*99999+100000);
       var today = new Date();
-      p.date = today.getTime() + 1000000
-      var b = {"player0":p.name + "_1" + p.id, "player1": req.body.name + "_0" + p.id, "id": p.id, "date":today.getTime()};
+      var b = {"player0":p.name + "_1" + p.id, "player1": req.body.name + "_0" + p.id, "id": p.id, "date":parseInt(today.getTime())};
       var p0 = {"entity": [], "base": {"hp": 1000, "gold": 0, "level": 1},"name":b.player0, "key": p.key};
       var p1 = {"entity": [], "base": {"hp": 1000, "gold": 0, "level": 1},"name":b.player1, "key": key};
+      p.name = null;
       player[player.length] = p0;
       player[player.length] = p1;
       battle[battle.length] = b;
-      p.name = null;
-      var data = {"id": p.id, "key": key, "name":req.body.nam, "host": 0};
+      lobby[lobby.length] = p;
+      var data = {"id": p.id, "key": key, "name":req.body.name, "host": 0};
       res.status(200).send(data);
     }
   }
@@ -171,28 +171,29 @@ app.post('/game', function(req, res) {
 });
 
 app.post('/status', function(req, res){
-  if(req.body!=null&&req.body.random=='false'){
+  if(req.body!=null){
     let p = getLobbyById(req.body.id);
     if (p!=null)
       res.send(p);
     else res.sendStatus(400);
   }
-  else if (req.body!=null&&req.body.random =='true'){
-    console.log("status")
-    let p = getFirstLobby();
-    if (p!=null){
+  else{res.sendStatus(400);}
+});
 
-      var today = new Date();
-      let pp = copy(p)
-      pp.date = today.getTime();
-      random_lobby[random_lobby.length] = pp;
-      console.log(random_lobby)
+app.post('/Rstatus', function(req, res){
+  if(req.body!=null){
+    let p = getRandomLobbyById(req.body.id);
+    if (p!=null&&p.name == null){
       res.send(p);
     }
-    else res.sendStatus(400);
+    else if (p!=null&&req.body.name != null){
+      p.date = p.date + 800;
+      res.send(p);
+    }
   }
   else{res.sendStatus(400);}
 });
+
 
 function getPlayerByName(name){
    for (var i in player){
@@ -228,14 +229,14 @@ function copy(p){
 }
 
 function getFirstLobby(){
-  for (let l of random_lobby){
+  for (let l of random){
     if (l.name!=null){
       return l;
     }
   }
 }
 function getRandomLobbyById(ID){
-  for (var l of random_lobby){
+  for (var l of random){
     if(l.id == ID){
       return l;
     }
@@ -386,6 +387,7 @@ function endBattle(ID, winner) {
       b.player0 = null;
       b.player1 = null;
       b.winner = winner;
+      game_count += 1;
       return;
     }
   }
@@ -420,9 +422,9 @@ function clearLobby(){
       lobby.splice(i, 1);
     }
   }
-  for (let i = (random_lobby.length - 1); i >= 0; i -= 1){
-    if (random_lobby[i].date + 2000 < now || random_lobby[i].flag == true){
-      random_lobby.splice(i, 1);
+  for (let i = (random.length - 1); i >= 0; i -= 1){
+    if (random[i].date + 669 <= now){
+      random.splice(i, 1);
     }
   }
 }
@@ -430,7 +432,7 @@ function clearLobby(){
 function clearBattles(){
   var today = new Date()
   for(var i = battle.length-1;i>=0;i-=1){
-    if (battle[i].flag == true || battle[i].date + 10000000<today.getTime() || (battle[i].date + 60000<today.getTime() && battle[i].player0==null)){
+    if (battle[i].flag == true || parseInt(battle[i].date,10) + 10000000<today.getTime() || (parseInt(battle[i].date,10) + 60000<today.getTime() && battle[i].player0==null)){
       battle.splice(i,1);
     }
   }
@@ -441,14 +443,14 @@ function getData(){
 }
 
 function logData(){
-  console.log("\nPlayers: "+player.length+"\nLobby size: "+lobby.length+"\nRandom Lobby size: "+random_lobby.length+"\nBattles: "+battle.length);
+  console.log("\nListening on port "+PORT+"\nPlayers: "+player.length+"\nLobby size: "+lobby.length+"\nRandom Lobby size: "+random.length+"\nBattles: "+battle.length + "\nGames played: "+game_count);
 }
 
 
 var loopCleanup1 = setInterval(clearLobby, 1000);
 var loopGame = setInterval(upkeep, 666);
 var loopCleanup2 = setInterval(clearBattles, 60000);
-var loopLog = setInterval(logData, 10000);
+var loopLog = setInterval(logData, 3000);
 
-app.listen(8001);
-console.log("listening on port 80");
+app.listen(PORT);
+console.log("listening on port "+PORT);
